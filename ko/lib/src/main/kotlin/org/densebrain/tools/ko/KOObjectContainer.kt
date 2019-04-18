@@ -39,7 +39,7 @@ data class KOObjectContainer(val children: MutableMap<String, Any> = mutableMapO
 }
 
 fun Map<String, String?>.toObjectContainer() = entries.fold(KOObjectContainer()) { root, (key, value) ->
-  //val log = KOLogger()
+  val log = KOLogger()
 
   if (value != null) {
     val parts = key.split(".")
@@ -53,16 +53,21 @@ fun Map<String, String?>.toObjectContainer() = entries.fold(KOObjectContainer())
       container = container.getContainer(prefixIterator.next())
     }
 
-    val typedValue = when {
-      value.matches(Regex("^[0-9.]+$")) ->
-        if (value.contains("."))
-          value.toDouble()
-        else
-          value.toInt()
+    val typedValue = try {
+      when {
+        value.matches(Regex("^[0-9.]+$")) ->
+          if (value.contains("."))
+            value.toDouble()
+          else
+            value.toInt()
 
-      arrayOf("true","false").contains(value.toLowerCase()) -> value.toBoolean()
+        arrayOf("true", "false").contains(value.toLowerCase()) -> value.toBoolean()
 
-      else -> value
+        else -> value
+      }
+    } catch (cause:Throwable) {
+      log("Unable to parse value: ${value}",cause)
+      value
     }
     container.set(name, typedValue)
   }
