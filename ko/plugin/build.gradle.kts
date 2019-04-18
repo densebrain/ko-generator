@@ -47,7 +47,7 @@ artifacts {
 
 pluginBundle {
 
-  website = "http://www.gradle.org/"
+  website = "https://github.com/densebrain/ko-generator-plugin"
   vcsUrl = "https://github.com/densebrain/ko-generator-plugin"
 
   plugins {
