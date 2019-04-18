@@ -5,9 +5,8 @@ import org.densebrain.tools.ko.KOGeneratorConfig
 import org.densebrain.tools.ko.KOLogger
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.jvm.tasks.Jar
-import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.withType
+import org.gradle.kotlin.dsl.*
+import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import java.io.File
 
 
@@ -39,27 +38,29 @@ open class KOGeneratorPlugin : Plugin<Project> {
     project.run {
       val extension = extensions.create<KOGeneratorExtension>("koGenerator",project,File(project.buildDir,"ko"))
 
-      val generateTask = tasks.create("generatePropertyObjects") {
-          group = "build"
-
-          doLast {
-            KOLogger.provider =  { msg: String, cause: Throwable? ->
-              logger.quiet(msg, cause)
-            }
-
-            KOGenerator(extension).execute()
-          }
-
-      }
 
       afterEvaluate {
-        tasks.findByName("build")?.apply {
-          dependsOn(generateTask)
+//        tasks.findByName("build")?.apply {
+//          dependsOn(generateTask)
+//        }
+
+        try {
+          configure<KotlinProjectExtension>() {
+            sourceSets["main"].kotlin.srcDir(extension.outputDir)
+          }
+
+          KOLogger.provider =  { msg: String, cause: Throwable? ->
+            logger.quiet(msg, cause)
+          }
+
+          KOGenerator(extension).execute()
+        } catch (cause:Throwable) {
+          logger.error("This project is not a kotlin project, can not add sources", cause)
         }
 
-        tasks.withType<Jar> {
-          from(extension.outputDir)
-        }
+//        tasks.withType<Jar> {
+//          from(extension.outputDir)
+//        }
       }
     }
   }

@@ -93,10 +93,12 @@ repositories {
 
 
 dependencies {
+  compileOnly(gradleApi())
   implementation("org.densebrain.tools:ko-generator:${version}")
   implementation(Deps.kotlinReflect)
   implementation(Deps.kotlinCompiler)
-  implementation(Deps.gradleKotlinPlugin)
+  //compileOnly(Deps.gradleKotlinPlugin)
+  compileOnly(Deps.kotlinGradle)
   implementation(Deps.kotlinPoet)
 
   testImplementation(Deps.junitApi)

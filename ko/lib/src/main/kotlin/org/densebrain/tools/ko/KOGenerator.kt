@@ -103,7 +103,7 @@ open class KOGenerator(private val config: KOGeneratorConfig) {
         .build())
     }
     container.containers.forEach { (name, value) ->
-      builder.addType(getObject(name,value))
+      builder.addType(getObject(prepareName(name),value))
     }
     return builder.build()
   }
@@ -118,7 +118,7 @@ open class KOGenerator(private val config: KOGeneratorConfig) {
 
     outputFiles.addAll(root.containers.map { (name, container) ->
       val builder = FileSpec.builder(packageName,prepareName(name))
-      builder.addType(getObject(name, container))
+      builder.addType(getObject(prepareName(name), container))
       builder.build()
     })
 
