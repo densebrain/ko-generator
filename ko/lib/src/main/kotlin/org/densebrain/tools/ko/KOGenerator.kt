@@ -38,24 +38,27 @@ open class KOGenerator(private val config: KOGeneratorConfig) {
   private val outputDir = run {
     val dir = config.outputDir
     //log("Using output dir: ${dir}")
-    if (!dir.exists()) {
-      val dirsToCreate = mutableListOf<File>()
-      var parent = dir.parentFile
-      while (true) {
-        if (parent == null || parent.exists()) {
-          break
-        }
-        dirsToCreate.add(parent)
-        parent = parent.parentFile
-      }
+    if (dir.exists())
+      dir.deleteRecursively()
 
-      dirsToCreate.reversed().forEach { parentDir ->
-        //log("Creating ${parentDir.absolutePath}")
-        parentDir.mkdirs()
-      }
 
-      dir.mkdirs()
+    val dirsToCreate = mutableListOf<File>()
+    var parent = dir.parentFile
+    while (true) {
+      if (parent == null || parent.exists()) {
+        break
+      }
+      dirsToCreate.add(parent)
+      parent = parent.parentFile
     }
+
+    dirsToCreate.reversed().forEach { parentDir ->
+      //log("Creating ${parentDir.absolutePath}")
+      parentDir.mkdirs()
+    }
+
+    dir.mkdirs()
+
     require(dir.isDirectory) { "${dir} is not a valid directory" }
     dir
   }
@@ -91,7 +94,7 @@ open class KOGenerator(private val config: KOGeneratorConfig) {
   private fun getValues(container: KOObjectContainer): List<PropertySpec> =
     container.values.map { (name, value) ->
       PropertySpec.builder(prepareName(name), value.javaClass.kotlin)
-        .initializer("%L", value)
+        .initializer(if (value is String) "%S" else "%L", value)
         .build()
     }
 
