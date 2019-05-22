@@ -1,0 +1,72 @@
+import java.io.File
+import groovy.util.AntBuilder
+
+
+String version = "2.7.1"
+File kscriptDir = file("${buildDir}/kscript")
+File kscriptExeDir = file("${kscriptDir}/kscript-${version}")
+File kscriptExe = file("${kscriptExeDir}/bin/kscript")
+File koOutputDir = file("${buildDir}/ko-script")
+File koRepoDir = file("${buildDir}/ko-repo")
+File koArtifactDir = file("${buildDir}/ko-repo/ko-artifact")
+File koJar = file("${koArtifactDir}/ko-1.0.0.jar")
+
+def shouldUpdate = { File projectDir, File jarFile ->
+  def files = []
+  File dir = projectDir
+  while (true) {
+    if (dir == null)
+      break
+
+    def propFiles = ["gradle.properties", "local.properties"].collect { new File(dir, it) }.findAll { it.exists() }
+    files = propFiles + files
+    dir = dir.parentFile
+  }
+
+  println("Checking file timestamps: ${files.collect { it.absolutePath }}")
+  return files.size() > 0 && files.findAll { it.lastModified() > jarFile.lastModified() }.size() > 0
+}
+
+
+if (!kscriptDir.exists() || !kscriptExe.exists() || !koJar.exists() || shouldUpdate(projectDir, koJar)) {
+  koArtifactDir.mkdirs()
+  kscriptDir.mkdirs()
+
+
+  def kscriptZip = file("${kscriptDir}/kscript.zip")
+  kscriptZip.setBytes(new URL("https://github.com/holgerbrandl/kscript/releases/download/v${version}/kscript-${version}-bin.zip").getBytes())
+
+  def ant = new AntBuilder()   // create an antbuilder
+
+  ant.unzip(src: kscriptZip.absolutePath,
+    dest: kscriptDir.absolutePath,
+    overwrite: "true")
+
+
+  kscriptExe.setExecutable(true)
+  def cmd = "${kscriptExe} ${projectDir}/ko-gradle-compile.kts ${projectDir}"
+  logger.quiet("Executing: ${cmd}")
+  def proc = cmd.execute()
+  proc.consumeProcessOutput(System.out, System.err)
+
+  if (proc.waitFor() != 0) {
+
+    throw new Exception("Unable to generate KO objects")
+  }
+  ant.zip(destfile: koJar.absolutePath, basedir: koOutputDir.absolutePath)
+}
+//project.buildscript {
+//
+//  repositories {
+//    flatDir {
+//      dirs(koArtifactDir.absolutePath)
+//    }
+//  }
+//
+//  dependencies {
+//    classpath "ko-artifact:ko:1.0.0"
+//  }
+//}
+//
+//
+
